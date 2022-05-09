@@ -29,9 +29,7 @@ Restart `graylog-server` and you are done.
 Usage
 -----
 
-Once you have installed the plugin, you can configure an Output of type  com.plugin.HumioHttp, with this simple parameter:
-
-output_api: API where the stream message is forwarded to.
+Once you have installed the plugin, you can configure an Output of type  com.plugin.HumioHttp by selecting which Cloud you are on, and adding an Ingest Token.   
 
 Plugin Release
 --------------
