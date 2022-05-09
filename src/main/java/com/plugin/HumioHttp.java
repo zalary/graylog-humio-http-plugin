@@ -6,7 +6,6 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Base64;
 
 import org.graylog2.plugin.Message;
 import org.graylog2.plugin.configuration.Configuration;
@@ -39,8 +38,7 @@ public class HumioHttp implements MessageOutput {
 	private boolean shutdown;
 	private String url;
 	private String token;
-	private String encodedToken;
-	private static final String CK_INGEST_TOKEN = "something_token";
+	private static final String CK_INGEST_TOKEN = "output_token";
 	private static final String CK_HUMIO_SUBDOMAIN = "output_subdomain";
 	private static final Logger LOG = LoggerFactory.getLogger(HumioHttp.class);
 
@@ -48,11 +46,11 @@ public class HumioHttp implements MessageOutput {
 	public HumioHttp(@Assisted Stream stream, @Assisted Configuration conf) throws HumioHttpException {
 
 		url = conf.getString(CK_HUMIO_SUBDOMAIN);
-		token = "Bearer " + conf.getString(CK_INGEST_TOKEN);
+		token = conf.getString(CK_INGEST_TOKEN);
 		shutdown = false;
 		LOG.info(" Humio Http Plugin has been configured with the following parameters:");
-		LOG.info(CK_INGEST_TOKEN + " : " + url);
-		
+		LOG.info(token + " : " + url);
+
 		try {
             final URL urlTest = new URL(url);
         } catch (MalformedURLException e) {
@@ -93,11 +91,10 @@ public class HumioHttp implements MessageOutput {
 		Gson gson = new Gson();
 
 		try {
-			String encodedToken = Base64.getEncoder().withoutPadding().encodeToString(token.getBytes());
 			final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 			RequestBody body = RequestBody.create(JSON, gson.toJson(data));
 			Request request = new Request.Builder().url(url)
-			.addHeader("Authorization", encodedToken)
+			.addHeader("AUTHORIZATION", "BEARER" + " " + token)
 			.post(body).build();
 			Response response = client.newCall(request).execute();
 			response.close();
@@ -107,7 +104,7 @@ public class HumioHttp implements MessageOutput {
 			}
 		} catch (IOException e) {
 			LOG.info("url: "  + url);
-			LOG.info("token: " + token + " + " + encodedToken);
+			LOG.info("token: " + token);
 			LOG.info("Error while posting the stream data to the given API", e);
             throw new HumioHttpException("Error while posting stream to HTTP.", e);
 		}
@@ -139,7 +136,7 @@ public class HumioHttp implements MessageOutput {
         "https://cloud.humio.com/api/v1/ingest/raw/", "EU",
         "https://cloud.au.humio.com/api/v1/ingest/raw/", "AU");
 			final ConfigurationRequest configurationRequest = new ConfigurationRequest();
-			configurationRequest.addField(new DropdownField(CK_HUMIO_SUBDOMAIN, "Subdomain", "US", subdomains, "Humio Cloud Subdomain", ConfigurationField.Optional.NOT_OPTIONAL));
+			configurationRequest.addField(new DropdownField(CK_HUMIO_SUBDOMAIN, "Subdomain", "", subdomains, "Humio Cloud Subdomain", ConfigurationField.Optional.NOT_OPTIONAL));
 			configurationRequest.addField(new TextField(CK_INGEST_TOKEN, "Humio Ingest Token", "-",
 					"https://library.humio.com/cloud/docs/ingesting-data/ingest-tokens/", ConfigurationField.Optional.NOT_OPTIONAL));
 
